@@ -4,6 +4,9 @@
     <TargetFramework>net8.0</TargetFramework>
     <PublishSingleFile>true</PublishSingleFile>
     <RootNamespace>balatro_mobile_maker</RootNamespace>
+    <Platforms>AnyCPU;x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>balatro-mobile-maker-beta-0.8.4-win-x64</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="SharpZipLib" Version="1.4.2" />

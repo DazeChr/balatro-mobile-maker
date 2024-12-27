@@ -234,6 +234,13 @@ internal class Tools
         return input == "y";
     }
 
+    public static string AskQuestion2(string question)
+    {
+        Log(question + ":");
+        string input = Console.ReadLine();
+        return input;
+    }
+
     public static void ModifyZip()
     {
         string existingZipFile = "balatro-base.zip";
