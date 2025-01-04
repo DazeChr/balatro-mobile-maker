@@ -10,8 +10,6 @@ namespace balatro_mobile_maker;
 
 internal class Patching
 {
-
-    static string VersionName;
     /// <summary>
     /// Apply a "patch" given a file path, a string from a line to be replaced, and the text with which to replace it.
     /// </summary>
@@ -25,7 +23,7 @@ internal class Patching
     {
         //Read the file
         Log("Loading " + file + " file...");
-        string[] loadedFile = File.ReadAllLines(file);
+        string[] loadedFile = File.ReadAllLines("Balatro/" + file);
 
         //Search for the line to replace
         bool found = false;
@@ -44,7 +42,7 @@ internal class Patching
         {
             //If it is found, write the file.
             Log("Successfully applied patch...");
-            File.WriteAllLines(file, loadedFile);
+            File.WriteAllLines("Balatro/" + file, loadedFile);
         }
         else
             Log("Unable to find patch location...");
@@ -60,7 +58,7 @@ internal class Patching
     {
         Log("Applying mobile compatibilty patch...");
         //Android platform support
-        ApplyPatch("Balatro/globals.lua", "loadstring", @"    -- Removed 'loadstring' line which generated lua code that exited upon starting on mobile
+        ApplyPatch("globals.lua", "loadstring", @"    -- Removed 'loadstring' line which generated lua code that exited upon starting on mobile
     if love.system.getOS() == 'Android' or love.system.getOS() == 'iOS' then
         self.F_SAVE_TIMER = 5
         self.F_DISCORD = true
@@ -72,11 +70,11 @@ internal class Patching
         self.F_QUIT_BUTTON = false
     end");
         //On-screen keyboard
-        ApplyPatch("Balatro/functions/button_callbacks.lua", "G.CONTROLLER.text_input_hook == e and G.CONTROLLER.HID.controller", "  if G.CONTROLLER.text_input_hook == e and (G.CONTROLLER.HID.controller or G.CONTROLLER.HID.touch) then");
+        ApplyPatch("functions/button_callbacks.lua", "G.CONTROLLER.text_input_hook == e and G.CONTROLLER.HID.controller", "  if G.CONTROLLER.text_input_hook == e and (G.CONTROLLER.HID.controller or G.CONTROLLER.HID.touch) then");
 
         // Flame fix patch
-        ApplyPatch("Balatro/resources/shaders/flame.fs", "#endif", "#endif\n#ifdef GL_ES\n\tprecision MY_HIGHP_OR_MEDIUMP float;\n#endif");
-        ApplyPatch("Balatro/resources/shaders/flame.fs", "vec4 effect( vec4 colour, Image texture, vec2 texture_coords, vec2 screen_coords )", "mediump vec4 effect( mediump vec4 colour, Image texture, mediump vec2 texture_coords, mediump vec2 screen_coords )");
+        ApplyPatch("resources/shaders/flame.fs", "#endif", "#endif\n#ifdef GL_ES\n\tprecision MY_HIGHP_OR_MEDIUMP float;\n#endif");
+        ApplyPatch("resources/shaders/flame.fs", "vec4 effect( vec4 colour, Image texture, vec2 texture_coords, vec2 screen_coords )", "mediump vec4 effect( mediump vec4 colour, Image texture, mediump vec2 texture_coords, mediump vec2 screen_coords )");
 
         //Ask whether they want the FPS cap patch
         if (AskQuestion("Would you like to apply the FPS cap patch?"))
@@ -84,9 +82,9 @@ internal class Patching
             int fps = -1;
             do
             {
-                string input = AskQuestion2("Please enter your desired FPS cap (or leave blank to set to device refresh rate):");
+                Log("Please enter your desired FPS cap (or leave blank to set to device refresh rate):");
                 // Conditional access as ReadLine is nullable
-                input = input?.ToLower();
+                string input = Console.ReadLine()?.ToLower();
 
                 if (String.IsNullOrWhiteSpace(input))
                 {
@@ -109,12 +107,12 @@ internal class Patching
             if (fps > 0)
             {
                 //Apply the patch using the given FPS
-                ApplyPatch("Balatro/main.lua", "G.FPS_CAP = G.FPS_CAP or", "        G.FPS_CAP = " + fps.ToString());
+                ApplyPatch("main.lua", "G.FPS_CAP = G.FPS_CAP or", "        G.FPS_CAP = " + fps.ToString());
             }
             else
             {
                 //Apply the patch using the display refresh rate
-                ApplyPatch("Balatro/main.lua", "G.FPS_CAP = G.FPS_CAP or", @"        G.FPS_CAP = G.FPS_CAP or select(3, love.window.getMode())['refreshrate']");
+                ApplyPatch("main.lua", "G.FPS_CAP = G.FPS_CAP or", @"        G.FPS_CAP = G.FPS_CAP or select(3, love.window.getMode())['refreshrate']");
             }
         }
 
@@ -122,34 +120,25 @@ internal class Patching
 
         if (AskQuestion("Would you like to apply the landscape orientation patch?"))
         {
-            ApplyPatch("Balatro/functions/button_callbacks.lua", "resizable = true,", "    resizable = not (love.system.getOS() == 'Android' or love.system.getOS() == 'iOS'),");
+            ApplyPatch("functions/button_callbacks.lua", "resizable = true,", "    resizable = not (love.system.getOS() == 'Android' or love.system.getOS() == 'iOS'),");
         }
 
         // Asking ReSharper to disable naming here, as, DPI (all-caps) is correct, not Dpi
         // ReSharper disable once InconsistentNaming
         if (AskQuestion("Would you like to apply the high DPI patch (recommended for devices with high resolution)?"))
         {
-            ApplyPatch("Balatro/conf.lua", "t.window.width = 0", "    t.window.width = 0\n    t.window.usedpiscale = false");
-            ApplyPatch("Balatro/functions/button_callbacks.lua", "highdpi = (love.system.getOS() == 'OS X')", "    highdpi = (love.system.getOS() == 'OS X' or love.system.getOS() == 'Android' or love.system.getOS() == 'iOS')");
+            ApplyPatch("conf.lua", "t.window.width = 0", "    t.window.width = 0\n    t.window.usedpiscale = false");
+            ApplyPatch("functions/button_callbacks.lua", "highdpi = (love.system.getOS() == 'OS X')", "    highdpi = (love.system.getOS() == 'OS X' or love.system.getOS() == 'Android' or love.system.getOS() == 'iOS')");
         }
 
         if (AskQuestion("Would you like to apply the CRT shader disable patch? (Required for Pixel and some other devices!)"))
         {
-            ApplyPatch("Balatro/globals.lua", "crt = ", "            crt = 0,");
-            ApplyPatch("Balatro/game.lua", "G.SHADERS['CRT'])", "");
+            ApplyPatch("globals.lua", "crt = ", "            crt = 0,");
+            ApplyPatch("game.lua", "G.SHADERS['CRT'])", "");
         }
-
-        VersionName = AskQuestion2("Would you like to specify a custom version name? Leave empty if you aren't sure");
-        // Setting correct version name in Android builds
-        if (string.IsNullOrWhiteSpace(VersionName))
-        {
-            VersionName = File.ReadAllLines("Balatro/version.jkr").First();
-            Log("Detected version of game: " + VersionName);
-        }
-        ApplyPatch("balatro-apk/AndroidManifest.xml", "android:versionName=\"1.0.0n-FULL\"", "android:versionName=\"" + VersionName + "\"");
 
         //TODO: Better command line args handling
         if (Program.ArgsEnableAccessibleSave && AskQuestion("Would you like to apply the external storage patch? (NOT recommended)"))
-            ApplyPatch("Balatro/conf.lua", "t.window.width = 0", "    t.window.width = 0\n    t.externalstorage = true");
+            ApplyPatch("conf.lua", "t.window.width = 0", "    t.window.width = 0\n    t.externalstorage = true");
     }
 }
